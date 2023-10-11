@@ -1,0 +1,27 @@
+# systemd unit file for vbus2mqtt
+
+# assuming the scripts are in /home/pi/vbus2mqtt/ (because you just want to quickly try it)
+# copy this to /etc/systemd/system/vbus2mqtt.service
+# $ cp vbus2mqtt.service /etc/systemd/system/vbus2mqtt.service
+# reload services
+# $ sudo systemctl daemon-reload
+# enable & start service:
+# $ sudo systemctl enable vbus2mqtt.service
+# $ sudo systemctl start vbus2mqtt.service
+# check if it's running:
+# systemctl list-units --type=service --state=running | grep vbus2mqtt
+
+[Unit]
+Description=VBus to MQTT bridge
+After=network.target mosquitto.service
+Requires=mosquitto.service
+
+[Service]
+ExecStart=/usr/bin/python3 /home/pi/vbus2mqtt/vbus2mqtt.py
+WorkingDirectory=/home/pi/vbus2mqtt/
+Restart=always
+User=pi
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

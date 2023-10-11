@@ -1,0 +1,174 @@
+// This config file requires JSON5 to be installed for python
+// It allows some perks config files benefit from such as comments or trailing commas.
+{
+    "vbus": {
+        "serialport": "/dev/serial0",
+        "baudrate": 9600,
+        "vsf": "vbus_specification.vsf"
+    },
+    "mqtt": {
+        "host": "localhost",
+        "port": 1883,
+        "user": "myuser",
+        "pass": "mypass123",
+        "topic_prefix": "vbus2mqtt/house/",
+        "last_will": {
+            "topic": "LWT",
+            "online": "Online",
+            "offline": "Offline"
+        }
+    },
+    "plugins": [
+        {
+            "name": "powercalc",
+            "module": "VBusReaderPlugins:VrpSolarPower",
+            "config": {
+                "field_tin": "00_0010_7321_10_0100_004_2_0",
+                "field_tout": "00_0010_7321_10_0100_010_2_0",
+                "field_pump": "00_0010_7321_10_0100_044_1_0",
+                "pump_flow": [0, 0, 0, 3.5, 4.5, 5, 6, 6.5, 7, 7.5, 8],
+                "medium": "tyfoclor_g-ls"
+            }
+        }
+    ],
+    "transfers": [
+        {
+            "mqtt": {
+                "topic": "panel_temp",
+                "retain": false,
+                "qos": 0
+            },
+            "trigger": {
+                "type": "update"
+            },
+            "type": "direct",
+            "field": {
+                "name": null,
+                "item": "00_0010_7321_10_0100_000_2_0" // Temperature sensor 1
+            }
+        },
+        {
+            "mqtt": {
+                "topic": "sensors",
+                "retain": false,
+                "qos": 0
+            },
+            "trigger": {
+                "type": "interval",
+                "interval": 5
+            },
+            "type": "json",
+            "fields": [
+                {
+                    "group": "temperatures",
+                    "fields": [
+                        {
+                            "name": "panel",
+                            "item": "00_0010_7321_10_0100_000_2_0" // Temperature sensor 1
+                        },
+                        {
+                            "group": "buffer",
+                            "fields": [
+                                {
+                                    "name": "bot",
+                                    "item": "00_0010_7321_10_0100_002_2_0" // Temperature sensor 2
+                                },
+                                {
+                                    "name": "mid",
+                                    "item": "00_0010_7321_10_0100_012_2_0" // Temperature sensor 7
+                                },
+                                {
+                                    "name": "top",
+                                    "item": "00_0010_7321_10_0100_014_2_0" // Temperature sensor 8
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "group": "pumps",
+                    "fields": [
+                        {
+                            "name": "solar_pri",
+                            "item": "00_0010_7321_10_0100_044_1_0" // Pump speed relay 1
+                        },
+                        {
+                            "name": "solar_sec",
+                            "item": "00_0010_7321_10_0100_045_1_0" // Pump speed relay 2
+                        }
+                    ]
+                },
+                {
+                    "group": "status",
+                    "fields": [
+                        {
+                            "name": "sys_errors",
+                            "item": "00_0010_7321_10_0100_060_2_0" // Error mask
+                        },
+                        {
+                            "name": "sys_warnings",
+                            "item": "00_0010_7321_10_0100_062_2_0" // Warning mask
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "mqtt": {
+                "topic": "system",
+                "retain": false,
+                "qos": 0
+            },
+            "trigger": {
+                "type": "interval",
+                "interval": 5
+            },
+            "type": "json",
+            "fields": [
+                {
+                    "name": "rxmsg_last",
+                    "meta": "comm:rxmsg_last"
+                },
+                {
+                    "name": "rxmsg_cnt",
+                    "meta": "comm:rxmsg_cnt"
+                },
+                {
+                    "name": "rxerr_last",
+                    "meta": "comm:rxerr_last"
+                },
+                {
+                    "name": "rxerr_cnt",
+                    "meta": "comm:rxerr_cnt"
+                },
+                {
+                    "name": "uptime",
+                    "meta": "sw:uptime"
+                },
+                {
+                    "name": "ram",
+                    "meta": "sw:ramuse"
+                },
+                {
+                    "name": "pid",
+                    "meta": "sw:pid"
+                }
+            ]
+        },
+        {
+            "mqtt": {
+                "topic": "heatx_power"
+            },
+            "trigger": {
+                "type": "update"
+            },
+            "type": "direct",
+
+            "field": {
+                "name": null,
+                "plugin": "powercalc",
+                "function": "power"
+            }
+        }
+    ]
+}
