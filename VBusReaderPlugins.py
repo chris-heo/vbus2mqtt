@@ -44,9 +44,9 @@ class VrpSolarPower():
                 self.medium_rho_m, self.medium_rho_t = (-0.86, 1062.2)
                 medium_set = True
         elif isinstance(self.cfg_medium, dict):
-            self.medium_c_m = json_get_or_fail(self.cfg_medium, "c_m")
+            self.medium_c_m = json_get_or_default(self.cfg_medium, "c_m", 0)
             self.medium_c_t = json_get_or_fail(self.cfg_medium, "c_t")
-            self.medium_rho_m = json_get_or_fail(self.cfg_medium, "rho_m")
+            self.medium_rho_m = json_get_or_default(self.cfg_medium, "rho_m", 0)
             self.medium_rho_t = json_get_or_fail(self.cfg_medium, "rho_t")
             medium_set = True
 
