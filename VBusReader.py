@@ -223,7 +223,11 @@ class VbusReader():
 
     def msg_received(self, msg):
         if callable(self.on_message):
-            self.on_message(self, msg)
+            try:
+                self.on_message(self, msg)
+            except:
+                import traceback
+                traceback.print_exc()
 
     @staticmethod
     def buff_get_dst_addr(buff: bytearray) -> int:

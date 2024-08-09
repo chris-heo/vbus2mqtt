@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 import json5 as json
 import serial
 from VBusSpecReader import VbusFieldType, VbusSpec
-from VBusReader import VbusSerialReader, VbusMessage1v0
+from VBusReader import VbusSerialReader, VbusMessage1v0, VbusMessageGarbage
 from MqttDispatcher import MqttDispatcher
 
 def dt_to_iso8601(timestamp: datetime):
@@ -87,7 +87,7 @@ class Vbus2Mqtt():
             self.vbus_reader = VbusSerialReader(self.vbus_ser, self.vbus_on_message)
         
     def vbus_on_message(self, reader, msg):
-        if msg.checksum_ok == False:
+        if isinstance(msg, VbusMessageGarbage) or msg.checksum_ok == False:
             self.stats_rxerr_cnt += 1
             self.stats_rxerr_last = datetime.now()
         elif isinstance(msg, VbusMessage1v0):
