@@ -3,12 +3,21 @@
 import time
 from datetime import datetime
 import os
+import logging
 import paho.mqtt.client as mqtt
 import json5 as json
 import serial
 from VBusSpecReader import VbusFieldType, VbusSpec
 from VBusReader import VbusSerialReader, VbusMessage1v0, VbusMessageGarbage
 from MqttDispatcher import MqttDispatcher
+
+log_stdout = logging.StreamHandler()
+log_stdout.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s"))
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(log_stdout)
+logger.propagate = False
 
 def dt_to_iso8601(timestamp: datetime):
     if timestamp is None:
@@ -65,11 +74,11 @@ class Vbus2Mqtt():
             try:
                 self.vbus_spec = VbusSpec()
                 self.vbus_spec.load_vsf(cfg_vbus["vsf"])
-            except:
-                print("VSF file could not be loaded.")
+            except Exception:
+                logger.error("VSF file could not be loaded.", exc_info=True)
                 return False
         else:
-            print("VSF file could not be found.")
+            logger.error("VSF file could not be found.")
             return False
         return True
 
@@ -81,11 +90,11 @@ class Vbus2Mqtt():
         try:
             self.vbus_ser = serial.Serial(cfg_vbus["serialport"], int(cfg_vbus["baudrate"]))
         except:
-            print("Serial port could not be opened. Is it used by another application?")
-        
+            logger.error("Serial port could not be opened. Is it used by another application?", exc_info=True)
+
         if self.vbus_ser is not None:
             self.vbus_reader = VbusSerialReader(self.vbus_ser, self.vbus_on_message)
-        
+
     def vbus_on_message(self, reader, msg):
         if isinstance(msg, VbusMessageGarbage) or msg.checksum_ok == False:
             self.stats_rxerr_cnt += 1
@@ -93,11 +102,14 @@ class Vbus2Mqtt():
         elif isinstance(msg, VbusMessage1v0):
             self.stats_rxmsg_last = datetime.now()
             self.stats_rxmsg_cnt += 1
-            
+
             decoded = msg.decode(self.vbus_spec)
             data = {}
             if decoded is None:
-                print(f"Message {msg} could not be decoded.")
+                logger.warning(f"Message {msg} could not be decoded.")
+                if logger.level == logging.DEBUG:
+                    msgbuff_str = " ".join(['%02X' % x for x in msg.msg_buff])
+                    logger.debug(f"Message contents: {msgbuff_str}")
             else:
                 for item in decoded:
                     fid = item[0].full_id
@@ -115,9 +127,9 @@ class Vbus2Mqtt():
 
     def mqtt_connect(self, client, userdata, flags, rc):
         cfg_mqtt = self.config["mqtt"]
-        print("MQTT connected, config:", cfg_mqtt)
+        logger.info("MQTT connected, config:", cfg_mqtt)
         if "last_will" in cfg_mqtt:
-            print("setting last will (online)")
+            logger.info("setting last will (online)")
             lw = cfg_mqtt["last_will"]
             client.publish(f"{self.mqtt_topic_prefix}{lw['topic']}", payload = lw["online"], qos = 0, retain = True)
 
