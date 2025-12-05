@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from VBusSpecReader import VbusSpec
-from VBusReader import VbusReader, VbusSerialReader, VbusMessage1v0, VbusDatagram2v0, VbusTelegram3v0, VbusTelegram3v1
+from VBusReader import VbusReader, VbusSerialReader, VbusMessage1v0, VbusDatagram2v0, VbusTelegram3v0, VbusTelegram3v1, VbusMessageGarbage
 import serial
 import time
 import argparse
@@ -12,7 +12,7 @@ lang = "EN"
 def dev_name(addr, lang = "EN"):
     if vbs is None:
         return "<unknown>"
-    
+
     dev = vbs.get_device(addr)
     if dev is not None:
         return dev.name[lang]
@@ -21,8 +21,12 @@ def dev_name(addr, lang = "EN"):
 
 def on_message(reader, msg):
     print("-----------------")
-    print(f"  SRC: 0x{msg.addr_src:04X} - {dev_name(msg.addr_src, lang)}")
-    print(f"  DST: 0x{msg.addr_dst:04X} - {dev_name(msg.addr_dst, lang)}")
+    print(f"  TIME: {msg.start_time} ... {msg.end_time}")
+    if isinstance(msg, VbusMessageGarbage):
+        print("  Received data could not be decoded.")
+    else:
+        print(f"  SRC: 0x{msg.addr_src:04X} - {dev_name(msg.addr_src, lang)}")
+        print(f"  DST: 0x{msg.addr_dst:04X} - {dev_name(msg.addr_dst, lang)}")
 
     print(f"  RAW: ")
     chunklen = 16
@@ -30,7 +34,10 @@ def on_message(reader, msg):
         offset = chunk * chunklen
         print("    " + " ".join(['%02X' % x for x in msg.msg_buff[offset: offset + chunklen]]))
 
-    if msg.checksum_ok == False:
+    if isinstance(msg, VbusMessageGarbage):
+        return
+
+    if msg.checksum_ok is False:
         print("  CHECKSUM NOT OK, SKIPPED")
 
     if isinstance(msg, VbusMessage1v0):
@@ -82,7 +89,7 @@ def main():
         try:
             vbs = VbusSpec()
             vbs.load_vsf(args.vsf)
-        except:
+        except Exception:
             print("VSF file could not be loaded.")
     else:
         print("VSF file could not be found.")
