@@ -96,6 +96,14 @@ class VbusMessage1v0(VbusMessage):
             return None
         return packet.decode_message(self.payload)
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(" \
+            f"addr_src=0x{self.addr_src:04X} " \
+            f"addr_dst=0x{self.addr_dst:04X} " \
+            f"command=0x{self.command:04X} " \
+            f"checksum_ok={self.checksum_ok}" \
+            ")"
+
 class VbusDatagram2v0Command(Enum):
     MODULE_ANSWER = 0x0100
     WRITE_VALUE_ACKREQ = 0x0200

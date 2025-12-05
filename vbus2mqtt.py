@@ -96,16 +96,19 @@ class Vbus2Mqtt():
             
             decoded = msg.decode(self.vbus_spec)
             data = {}
-            for item in decoded:
-                fid = item[0].full_id
-                value = item[1]
+            if decoded is None:
+                print(f"Message {msg} could not be decoded.")
+            else:
+                for item in decoded:
+                    fid = item[0].full_id
+                    value = item[1]
 
-                # round values to not be ridiculous
-                if item[0].type_id == VbusFieldType.Number:
-                    value = round(item[1], item[0].precision)
+                    # round values to not be ridiculous
+                    if item[0].type_id == VbusFieldType.Number:
+                        value = round(item[1], item[0].precision)
 
-                data[fid] = value
-            self.dispatcher.update_fields(data, datetime.now())
+                    data[fid] = value
+                self.dispatcher.update_fields(data, datetime.now())
 
     def tick(self) -> float:
         return self.dispatcher.tick()

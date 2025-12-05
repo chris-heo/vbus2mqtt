@@ -37,16 +37,21 @@ def on_message(reader, msg):
         print("  Checksum ok")
         print("  VER: v1.0 message")
         print(f"  CMD: 0x{msg.command:04X}")
-        print("  Fields:")
 
         if vbs:
+            print("  Fields:")
             packet = vbs.get_packet(msg.addr_src, msg.addr_dst, msg.command)
-            decoded = packet.decode_message(msg.payload)
-            for item in decoded:
-                val = item[1]
-                if isinstance(item[1], float):
-                    val = f"{val:0.2f}"
-                print(f"    {item[0].full_id}\t{item[0].name[lang]}\t{val} {item[0].unit.text_text}")
+            if packet is None:
+                print("    No packet definition found")
+            else:
+                decoded = packet.decode_message(msg.payload)
+                for item in decoded:
+                    val = item[1]
+                    if isinstance(item[1], float):
+                        val = f"{val:0.2f}"
+                    print(f"    {item[0].full_id}\t{item[0].name[lang]}\t{val} {item[0].unit.text_text}")
+        else:
+            print("  Fields not decoded")
     elif isinstance(msg, VbusDatagram2v0):
         print("  Checksum ok")
         print("  VER: v2.0 Datagram")
